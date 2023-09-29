@@ -1,0 +1,14 @@
+.custom {
+    color:#007bff;
+    font-size:20px;
+}
+.topnav {
+    display: flex;
+    justify-content: center;
+    align-items: baseline;
+    width: 100%;
+    max-width: 960px;
+    height: 50px;
+    margin: 0 auto;
+    line-height: 50px;
+}
