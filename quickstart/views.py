@@ -42,9 +42,6 @@ def index(request):
     paginator = Paginator(Pokemons, 6)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    #print(paginator.page_range[-1])
-    #print(page_obj.number)
-
 
 
     if (page_obj.number == paginator.page_range[-1]):
@@ -80,7 +77,11 @@ def poke_fights(request, name):
     global enemy_point
 
     if request.method == 'POST':
-        if (rounds >= 1):
+        fight = Fight.objects.all().last()
+        my_point = fight.fighter_f
+        enemy_point = fight.fighter_s
+
+        if (my_point > 0 and enemy_point > 0 ):
             textt = "hhhh"
             hit = (int)(request.POST.get("hit"))
             random_index = random.randint(0, 10)
@@ -94,32 +95,46 @@ def poke_fights(request, name):
 
             choosed_poke.append(Pokemons[selected_enemy])
             choosed_names = [p.name for p in choosed_poke]
+            choosed_attack = [p.attack for p in choosed_poke]
+            choosed_hp = [p.hp for p in choosed_poke]
 
             fight = Fight.objects.all().last()
+            print("FIGHT")
 
             if ((hit%2==1 and random_index%2==1) or (hit%2==0 and random_index%2==0)):
 
-                my_point = my_point + 1
-                fight.fighter_f = my_point
+
+                fight.fighter_s = fight.fighter_s - choosed_poke[0].attack
+                print(fight.fighter_s)
+                my_point = fight.fighter_f
+                enemy_point = fight.fighter_s
                 fight.save()
                 textt = "Выйграл боец игрока"
                 rounds = rounds-1
             else:
-                enemy_point = enemy_point+1
-                fight.fighter_s = enemy_point
+
+
+                fight.fighter_f = fight.fighter_f - choosed_poke[1].attack
+                print(fight.fighter_f)
+                my_point = fight.fighter_f
+                enemy_point = fight.fighter_s
 
                 fight.save()
                 textt = "Выйграл боец компьютера"
                 rounds = rounds-1
 
-            print(rounds)
-            return render(request, 'poke_fights.html', {"Pokemons": choosed_poke, "Names": choosed_names, "Result": textt, "Round": rounds } )
+
+            return render(request, 'poke_fights.html', {"Pokemons": choosed_poke, "Names": choosed_names, "Hps":choosed_hp, "Attacks":choosed_attack, "Result": textt } )
         else:
-            print(rounds)
+            fight = Fight.objects.all().last()
+            fight.fighter_f = my_point
+            fight.fighter_s = enemy_point
+            fight.save()
+
             if(my_point>enemy_point):
-                return render(request, 'end.html', {"End": "Бой завершен, победа за Вами!", "Itog": [my_point, enemy_point]} )
+                return render(request, 'end.html', {"End": "Бой завершен, победа за Вами!"} )
             else:
-                return render(request, 'end.html', {"End": "Бой завершен, победа за Компьютером!", "Itog": [my_point, enemy_point]} )
+                return render(request, 'end.html', {"End": "Бой завершен, победа за Компьютером!"} )
 
 
 
@@ -142,10 +157,12 @@ def poke_fights(request, name):
             selected_enemy = random.randint(0, len(Pokemons) - 1)
         choosed_poke.append(Pokemons[selected_enemy])
         choosed_names = [p.name for p in choosed_poke]
+        choosed_attack = [p.attack for p in choosed_poke]
+        choosed_hp = [p.hp for p in choosed_poke]
 
-        fight = Fight(fighter_f=0, fighter_s=0)
+        fight = Fight(fighter_f=choosed_poke[0].hp, fighter_s=choosed_poke[1].hp)
         fight.save()
         print(rounds)
-        return render(request, 'poke_fights.html', {"Pokemons": choosed_poke, "Names": choosed_names, "Result":"Здесь будет выведен результат каждого раунда",  "Round": rounds} )
+        return render(request, 'poke_fights.html', {"Pokemons": choosed_poke, "Names": choosed_names, "Hps":choosed_hp, "Attacks":choosed_attack,  "Result":"Здесь будет выведен результат каждого раунда",} )
 
     return 0
