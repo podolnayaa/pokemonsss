@@ -15,10 +15,16 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 from quickstart import views
 
+poke_patterns = [
+    path("", views.show_pokemon, name='show_pokemon'),
+    path("fight/", views.poke_fights, name='poke_fights'),
+
+]
+
 urlpatterns = [
-    path('', views.index, name='home'),
-   path('search/', views.search_pokemons, name = 'search_pokemons'),
+    path("", views.index, name='home'),
+    path("pokemon/<str:name>/", include(poke_patterns)),
 ]

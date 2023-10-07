@@ -18,27 +18,56 @@
 
     >
         <div class="container" style="background-color: white; border-radius: 200px; width: content-box" >
-        <h1 class="mb-3">PokemonsApi</h1>
+        <h1 class="mb-3">Pokemons Fights</h1>
             </div>
 
-        <div class="container custom" >
-            <form action="{% url 'search_pokemons' %}" method="get">
-                <input name="pokemon" type="text" placeholder="Поиск покемона...">
-            </form>
-        </div>
+
     </div>
     <!-- Jumbotron -->
 </header>
+        <div class="container">
 
+            <div class="row">
+                {% for p in page_obj %}
+                <!-- Карточка с card-img-top -->
+                <div class="col-md-4">
+                <div class="card">
+                    <!-- Изображение -->
+                    <img class="card-img-top" style="width: 200px" src={{ p.image }} alt={{ p.name }}>
+                    <!-- Текстовый контент -->
+                    <div class="card-body">
+                        <h5 class="card-title"> {{ p.name }}</h5>
+                        <a href="{% url 'show_pokemon' p.name %}" class="btn btn-primary"> Подробно </a>
+                    </div>
+                </div><!-- Конец карточки -->
+                </div>
+                {% endfor %}
 
-<div >
-{% for p in pokemons %}
-<div class="topnav"><p class="fs-3">{{ p }}</p></div>
+            </div>
+        </div>
 
-{% endfor %}
+<div class="container">
+
+    <div class="row">
+<div class="pagination">
+    <span class="step-links">
+        {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}">предыдущая</a>
+        {% endif %}
+
+        <span class="current-page">
+            Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}.
+        </span>
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}">следующая</a>
+        {% endif %}
+    </span>
+</div>
+    </div>
 </div>
 
-</div>
+
 </body>
 </html>
 
