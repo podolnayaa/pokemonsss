@@ -4,7 +4,11 @@ from django.core.paginator import Paginator
 import random
 import requests
 from .models import Fight
-from django.db.models import F
+
+from django.core.mail import send_mail
+from django.core.validators import validate_email
+from django import forms
+from .forms import MailForm
 
 Pokemons = []
 selected_enemy = 0
@@ -13,6 +17,7 @@ now_page = 8
 start = True
 my_point = 0
 enemy_point = 0
+
 
 class Pokemon():
     def __init__(self, name, image, hp, attack, speed):
@@ -72,7 +77,6 @@ def show_pokemon(request, name):
 
 def poke_fights(request, name):
     global selected_enemy
-    global rounds
     global my_point
     global enemy_point
 
@@ -82,12 +86,11 @@ def poke_fights(request, name):
         enemy_point = fight.fighter_s
 
         if (my_point > 0 and enemy_point > 0 ):
-            textt = "hhhh"
             hit = (int)(request.POST.get("hit"))
             random_index = random.randint(0, 10)
 
             choosed_poke = []
-            choosed_names = []
+
             for i in range(len(Pokemons)):
                 if (Pokemons[i].name == name):
                     choosed_poke.append(Pokemons[i])
@@ -110,7 +113,7 @@ def poke_fights(request, name):
                 enemy_point = fight.fighter_s
                 fight.save()
                 textt = "Выйграл боец игрока"
-                rounds = rounds-1
+
             else:
 
 
@@ -121,7 +124,7 @@ def poke_fights(request, name):
 
                 fight.save()
                 textt = "Выйграл боец компьютера"
-                rounds = rounds-1
+
 
 
             return render(request, 'poke_fights.html', {"Pokemons": choosed_poke, "Names": choosed_names, "Hps":choosed_hp, "Attacks":choosed_attack, "Result": textt } )
@@ -140,12 +143,12 @@ def poke_fights(request, name):
 
 
     else: #если мы просто выводим файт
-        rounds = 3
+
         my_point = 0
         enemy_point = 0
 
         choosed_poke = []
-        choosed_names = []
+
         for i in range(len(Pokemons)):
             if (Pokemons[i].name == name):
                 choosed_poke.append(Pokemons[i])
@@ -162,7 +165,77 @@ def poke_fights(request, name):
 
         fight = Fight(fighter_f=choosed_poke[0].hp, fighter_s=choosed_poke[1].hp)
         fight.save()
-        print(rounds)
+
         return render(request, 'poke_fights.html', {"Pokemons": choosed_poke, "Names": choosed_names, "Hps":choosed_hp, "Attacks":choosed_attack,  "Result":"Здесь будет выведен результат каждого раунда",} )
+
+    return 0
+
+def poke_fast_fight(request, name):
+    global rounds
+    if request.method == 'GET':
+        rounds = 0
+
+        text = []
+        choosed_poke = []
+
+        for i in range(len(Pokemons)):
+            if (Pokemons[i].name == name):
+                choosed_poke.append(Pokemons[i])
+                break
+
+        selected_enemy = random.randint(0, len(Pokemons) - 1)
+
+        while(Pokemons[selected_enemy].name==choosed_poke[0].name):
+            selected_enemy = random.randint(0, len(Pokemons) - 1)
+        choosed_poke.append(Pokemons[selected_enemy])
+
+        fight = Fight(fighter_f=choosed_poke[0].hp, fighter_s=choosed_poke[1].hp)
+        while(fight.fighter_f > 0 and fight.fighter_s > 0):
+            random_index_f = random.randint(0, 10)
+            random_index_s = random.randint(0, 10)
+
+            if ((random_index_s%2==1 and random_index_f%2==1) or (random_index_f%2==0 and random_index_s%2==0)):
+                fight.fighter_s = fight.fighter_s - choosed_poke[0].attack
+                text.append("В раунде выйграл боец игрока")
+                rounds +=1
+                fight.save()
+                fight = Fight.objects.all().last()
+
+            else:
+
+                fight.fighter_f = fight.fighter_f - choosed_poke[1].attack
+                text.append("В раунде выйграл боец компьютера")
+                rounds +=1
+                fight.save()
+                fight = Fight.objects.all().last()
+
+
+        fight.save()
+
+        mailform = MailForm()
+        return render(request, 'fast_end.html', {"End": text, "Form": mailform, "Flag": 1} )
+
+    else:
+        fight = Fight.objects.all().last()
+        new_mail = request.POST.get("email")
+
+        subject = 'Результат боя №'+str(fight.fightid)
+        if fight.fighter_f <=0:
+            message = "Победа Компьютера!"+"\n"+"Всего раундов: "+str(rounds)\
+                      +"\n"+"Оставшееся здоровье персонажа Игрока: "+ str(fight.fighter_f)+"\n"\
+                      +"Оставшееся здоровье персонажа Компьютера: "+str(fight.fighter_s)+"\n"
+        else:
+            message = "Победа Игрока!"+"\n"+"Всего раундов: "+str(rounds) \
+                      +"\n"+"Оставшееся здоровье персонажа Игрока: "+str(fight.fighter_f)+"\n" \
+                      +"Оставшееся здоровье персонажа Компьютера: "+ str(fight.fighter_s)+"\n"
+
+        recipient_list = [new_mail]
+
+        send_mail(subject, message, recipient_list=recipient_list, from_email="")
+
+        mailform = MailForm()
+        return render(request, 'fast_end.html', {"End": ["Письмо отправлено!"], "Form": mailform, "Flag": 0 } )
+
+
 
     return 0

@@ -21,6 +21,7 @@ from quickstart import views
 poke_patterns = [
     path("", views.show_pokemon, name='show_pokemon'),
     path("fight/", views.poke_fights, name='poke_fights'),
+    path("fast_fight/", views.poke_fast_fight, name='poke_fast_fight'),
 
 ]
 
