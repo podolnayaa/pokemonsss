@@ -10,6 +10,10 @@ from django.core.validators import validate_email
 from django import forms
 from .forms import MailForm
 
+import ftplib
+import datetime
+import markdown
+
 Pokemons = []
 selected_enemy = 0
 rounds = 0
@@ -235,7 +239,97 @@ def poke_fast_fight(request, name):
 
         mailform = MailForm()
         return render(request, 'fast_end.html', {"End": ["Письмо отправлено!"], "Form": mailform, "Flag": 0 } )
+    return 0
 
+def convert_to_markdown(checkbox1, checkbox2, checkbox3, poke):
+    result = ""
+    result += "# "+"Имя покемона: "+poke.name+" \n"
+
+    if checkbox1:
+        result += "Атака: "+str(poke.attack)+" \n"
+
+    if checkbox2:
+        result += "Здоровье: "+str(poke.hp)+" \n"
+
+    if checkbox3:
+        result += "Скорость: "+str(poke.speed)+" \n"
+
+
+    return markdown.markdown(result)
+
+def poke_save_info(request, name):
+    if request.method == 'GET':
+        choosed_poke =0
+
+        for i in range(len(Pokemons)):
+            if (Pokemons[i].name == name):
+                choosed_poke = Pokemons[i]
+                break
+        return render(request, 'ftp_sending.html', {"P": choosed_poke} )
+
+    else:
+        checkbox1 = request.POST.get('checkbox1')
+        checkbox2 = request.POST.get('checkbox2')
+        checkbox3 = request.POST.get('checkbox3')
+
+        choosed_poke =0
+
+        for i in range(len(Pokemons)):
+            if (Pokemons[i].name == name):
+                choosed_poke = Pokemons[i]
+                break
+
+        current_date = datetime.datetime.now().strftime('%Y%m%d')
+        markdown_text = convert_to_markdown(checkbox1, checkbox2, checkbox3, choosed_poke)
+        print(markdown_text)
+
+        FTP_HOST = "127.0.0.1"
+        FTP_USER = "Svetik"
+        FTP_PASS = "12345"
+
+        # connect to the FTP server
+        ftp = ftplib.FTP(FTP_HOST, FTP_USER, FTP_PASS)
+        # force UTF-8 encoding
+        ftp.encoding = "utf-8"
+
+        file_list_fol = ftp.nlst()
+        if current_date in file_list_fol:
+
+            file_list = ftp.nlst(current_date)
+            filename = str(name)+"_pokemon.txt"
+            if filename in file_list:
+                print(f'Файл уже существует')
+            else:
+                ftp.cwd(current_date)
+                with open(filename, "w+") as file:
+                #записываю информацию в файл
+                    file.write(markdown_text)
+
+
+                ftp.storbinary(f"STOR {filename}", open(filename, 'rb'))
+
+
+
+
+
+
+        else:
+
+            ftp.mkd(current_date)
+            ftp.cwd(current_date)
+            filename = str(name)+"_pokemon.txt"
+
+            with open(filename, "w+") as file:
+                #записываю информацию в файл
+                file.write(markdown_text)
+
+
+            ftp.storbinary(f"STOR {filename}", open(filename, 'rb'))
+
+
+        ftp.quit()
+
+        return render(request, "poke.html", context = {"Pokemon": choosed_poke })
 
 
     return 0

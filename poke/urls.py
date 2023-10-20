@@ -23,6 +23,8 @@ poke_patterns = [
     path("fight/", views.poke_fights, name='poke_fights'),
     path("fast_fight/", views.poke_fast_fight, name='poke_fast_fight'),
 
+    path("save_info/", views.poke_save_info, name='poke_save_info'),
+
 ]
 
 urlpatterns = [

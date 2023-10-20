@@ -43,6 +43,7 @@
                     <h5> Скорость: {{ Pokemon.speed }}</h5>
                     <a href="{% url 'poke_fights' Pokemon.name %}" class="btn btn-primary"> Выбрать для боя </a>
                     <a href="{% url 'poke_fast_fight' Pokemon.name %}" class="btn btn-primary"> Выбрать для быстрого боя </a>
+                    <a href="{% url 'poke_save_info' Pokemon.name %}" class="btn btn-primary"> Сохранить информацию о покемоне </a>
                 </div>
                 </div>
             </div><!-- Конец карточки -->

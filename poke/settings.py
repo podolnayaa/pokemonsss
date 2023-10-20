@@ -140,3 +140,4 @@ EMAIL_USE_SSL = False
 EMAIL_HOST_USER = 'ddqqpoo@gmail.com'
 EMAIL_HOST_PASSWORD = ''
 DEFAULT_FROM_EMAIL = 'ddqqpoo@gmail.com'
+
