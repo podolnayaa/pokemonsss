@@ -12,7 +12,6 @@ from .forms import MailForm
 
 import ftplib
 import datetime
-import markdown
 
 Pokemons = []
 selected_enemy = 0
@@ -242,20 +241,17 @@ def poke_fast_fight(request, name):
     return 0
 
 def convert_to_markdown(checkbox1, checkbox2, checkbox3, poke):
-    result = ""
-    result += "# "+"Имя покемона: "+poke.name+" \n"
 
+    result = f"# Имя покемона: {poke.name}\n\n"
     if checkbox1:
-        result += "Атака: "+str(poke.attack)+" \n"
+        result += f"Аттака: {poke.attack}\n\n"
 
     if checkbox2:
-        result += "Здоровье: "+str(poke.hp)+" \n"
+        result += f"Здоровье: {poke.hp}\n\n"
 
     if checkbox3:
-        result += "Скорость: "+str(poke.speed)+" \n"
-
-
-    return markdown.markdown(result)
+        result += f"Скорость: {poke.speed}\n\n"
+    return result
 
 def poke_save_info(request, name):
     if request.method == 'GET':
@@ -296,32 +292,25 @@ def poke_save_info(request, name):
         if current_date in file_list_fol:
 
             file_list = ftp.nlst(current_date)
-            filename = str(name)+"_pokemon.txt"
+            filename = str(name)+"_pokemon.md"
             if filename in file_list:
                 print(f'Файл уже существует')
             else:
                 ftp.cwd(current_date)
-                with open(filename, "w+") as file:
-                #записываю информацию в файл
-                    file.write(markdown_text)
+                with open(filename, "wb") as file:
 
-
+                    file.write(markdown_text.encode())
                 ftp.storbinary(f"STOR {filename}", open(filename, 'rb'))
-
-
-
-
-
 
         else:
 
             ftp.mkd(current_date)
             ftp.cwd(current_date)
-            filename = str(name)+"_pokemon.txt"
+            filename = str(name)+"_pokemon.md"
 
-            with open(filename, "w+") as file:
-                #записываю информацию в файл
-                file.write(markdown_text)
+            with open(filename, "wb") as file:
+
+                file.write(markdown_text.encode())
 
 
             ftp.storbinary(f"STOR {filename}", open(filename, 'rb'))
