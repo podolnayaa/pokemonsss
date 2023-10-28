@@ -13,13 +13,16 @@ from .forms import MailForm
 import ftplib
 import datetime
 
+from django.core.cache import cache
+
 Pokemons = []
 selected_enemy = 0
 rounds = 0
-now_page = 8
+now_pok = 3
 start = True
 my_point = 0
 enemy_point = 0
+
 
 
 class Pokemon():
@@ -32,12 +35,14 @@ class Pokemon():
 
 
 def index(request):
-    global now_page
     global start
+    global now_pok
     BASE_URL = 'https://pokeapi.co/api/v2/pokemon'
 
-    if(start == True):
-        for i in range(1,8):
+
+    # Получаем список объектов для вывода на странице
+    if start == True:
+        for i in range(1,2):
             response = requests.get(f"{BASE_URL}/{i}").json()
             Pokemons.append(Pokemon(response['name'],
                                     response['sprites']['other']['dream_world']['front_default'],
@@ -45,26 +50,57 @@ def index(request):
                                     response['stats'][1]['base_stat'],
                                     response['stats'][-1]['base_stat'],))
         start = False
+        cache_key = f"my_model_page_None"
+        cache.set(cache_key, Pokemons )
 
-
+    print(start)
+    # Создаем пагинатор с 10 объектами на странице
     paginator = Paginator(Pokemons, 6)
+
+    # Получаем номер запрошенной страницы из GET-параметров
     page_number = request.GET.get('page')
+    if (page_number is None):
+        page_number = 1
+
+    # Получаем объекты для текущей страницы
     page_obj = paginator.get_page(page_number)
 
+    print("PAGE NUMBER:", page_number)
+    # Проверяем, есть ли кеш для текущей страницы
+    cache_key = f"my_model_page_{page_obj.number}"
+    cached_data = cache.get(cache_key)
 
-    if (page_obj.number == paginator.page_range[-1]):
-        for i in range(now_page,now_page+7):
+    if cached_data is not None:
+        # Если есть кеш, то используем его данные для вывода на странице
+        print("CACHED_DATA")
+        #page_obj.object_list = cached_data
+    else:
+        # Если кеша нет, то получаем данные и сохраняем их в кеш
+        print("YES")
+        Pokemons_new = []
+        for i in range(now_pok,now_pok+6):
             response = requests.get(f"{BASE_URL}/{i}").json()
-            Pokemons.append(Pokemon(response['name'],
-                                    response['sprites']['other']['dream_world']['front_default'],
-                                    response['stats'][0]['base_stat'],
-                                    response['stats'][1]['base_stat'],
-                                    response['stats'][-1]['base_stat'],))
-        now_page = now_page+6
-    #print(len(Pokemons))
+            Pokemons_new.append(Pokemon(response['name'],
+                                response['sprites']['other']['dream_world']['front_default'],
+                                response['stats'][0]['base_stat'],
+                                response['stats'][1]['base_stat'],
+                                response['stats'][-1]['base_stat'],))
 
+        now_pok+=6
+        print("ID следующего покемона:", now_pok)
+        for i in range(len(Pokemons_new)):
+            Pokemons.append(Pokemons_new[i])
+
+        cache_key = f"my_model_page_{page_number}"
+        cache.set(cache_key, Pokemons_new)
+        #page_obj.object_list = Pokemons_new
+
+    # Выводим объекты на страницу
+    print(len(Pokemons))
+    # Создаем пагинатор с 10 объектами на странице
     paginator = Paginator(Pokemons, 6)
-    page_number = request.GET.get('page')
+
+    # Получаем объекты для текущей страницы
     page_obj = paginator.get_page(page_number)
 
     return render(request, "index.html", {'page_obj': page_obj})
