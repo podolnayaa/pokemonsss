@@ -1,0 +1,44 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/stylesheet.css'%}" type="text/css">
+    <title>Pokemon</title>
+</head>
+<body>
+<header>
+    <!-- Jumbotron -->
+    <div class="p-5 text-center bg-light"
+         style="
+    background-image: url('https://stavchess.ru/wp-content/uploads/f/e/7/fe7f9d61fce017b507d7c855478e38c0.webp');"
+
+    >
+        <div class="container" style="background-color: white; border-radius: 200px; width: content-box" >
+            <h1 class="mb-3">Pokemons Fights</h1>
+        </div>
+    </div>
+    <!-- Jumbotron -->
+</header>
+
+<form method="POST" action="{% url 'poke_save_info' P.name %}">
+    {% csrf_token %}
+    <legend>Выберите значения для сохранения покемона {{ P.name }} </legend>
+    <div class="form-check">
+    <input class="form-check-input" type="checkbox" id="checkbox1" name="checkbox1" value="Атака">
+    <label class="form-check-label" for="checkbox1">Атака: {{ P.attack }}</label><br>
+        </div>
+    <div class="form-check">
+    <input class="form-check-input" type="checkbox" id="checkbox2" name="checkbox2" value="Здоровье">
+    <label class="form-check-label" for="checkbox2">Здоровье: {{ P.hp }}</label><br>
+        </div>
+    <div class="form-check">
+    <input class="form-check-input" type="checkbox" id="checkbox3" name="checkbox3" value="Скорость">
+    <label class="form-check-label" for="checkbox3">Скорость: {{ P.speed }}</label><br>
+        </div>
+    <button type="submit" class="btn btn-primary" >Сохранить</button>
+</form>
+
+</body>
+</html>

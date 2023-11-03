@@ -140,3 +140,14 @@ EMAIL_USE_SSL = False
 EMAIL_HOST_USER = 'ddqqpoo@gmail.com'
 EMAIL_HOST_PASSWORD = ''
 DEFAULT_FROM_EMAIL = 'ddqqpoo@gmail.com'
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': 'redis://127.0.0.1:6379/1',
+        'TIMEOUT': 300,
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        }
+    }
+}

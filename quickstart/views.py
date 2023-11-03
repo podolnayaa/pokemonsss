@@ -10,13 +10,19 @@ from django.core.validators import validate_email
 from django import forms
 from .forms import MailForm
 
+import ftplib
+import datetime
+
+from django.core.cache import cache
+
 Pokemons = []
 selected_enemy = 0
 rounds = 0
-now_page = 8
+now_pok = 3
 start = True
 my_point = 0
 enemy_point = 0
+
 
 
 class Pokemon():
@@ -29,12 +35,14 @@ class Pokemon():
 
 
 def index(request):
-    global now_page
     global start
+    global now_pok
     BASE_URL = 'https://pokeapi.co/api/v2/pokemon'
 
-    if(start == True):
-        for i in range(1,8):
+
+    # Получаем список объектов для вывода на странице
+    if start == True:
+        for i in range(1,2):
             response = requests.get(f"{BASE_URL}/{i}").json()
             Pokemons.append(Pokemon(response['name'],
                                     response['sprites']['other']['dream_world']['front_default'],
@@ -42,26 +50,57 @@ def index(request):
                                     response['stats'][1]['base_stat'],
                                     response['stats'][-1]['base_stat'],))
         start = False
+        cache_key = f"my_model_page_None"
+        cache.set(cache_key, Pokemons )
 
-
+    print(start)
+    # Создаем пагинатор с 10 объектами на странице
     paginator = Paginator(Pokemons, 6)
+
+    # Получаем номер запрошенной страницы из GET-параметров
     page_number = request.GET.get('page')
+    if (page_number is None):
+        page_number = 1
+
+    # Получаем объекты для текущей страницы
     page_obj = paginator.get_page(page_number)
 
+    print("PAGE NUMBER:", page_number)
+    # Проверяем, есть ли кеш для текущей страницы
+    cache_key = f"my_model_page_{page_obj.number}"
+    cached_data = cache.get(cache_key)
 
-    if (page_obj.number == paginator.page_range[-1]):
-        for i in range(now_page,now_page+7):
+    if cached_data is not None:
+        # Если есть кеш, то используем его данные для вывода на странице
+        print("CACHED_DATA")
+        #page_obj.object_list = cached_data
+    else:
+        # Если кеша нет, то получаем данные и сохраняем их в кеш
+        print("YES")
+        Pokemons_new = []
+        for i in range(now_pok,now_pok+6):
             response = requests.get(f"{BASE_URL}/{i}").json()
-            Pokemons.append(Pokemon(response['name'],
-                                    response['sprites']['other']['dream_world']['front_default'],
-                                    response['stats'][0]['base_stat'],
-                                    response['stats'][1]['base_stat'],
-                                    response['stats'][-1]['base_stat'],))
-        now_page = now_page+6
-    #print(len(Pokemons))
+            Pokemons_new.append(Pokemon(response['name'],
+                                response['sprites']['other']['dream_world']['front_default'],
+                                response['stats'][0]['base_stat'],
+                                response['stats'][1]['base_stat'],
+                                response['stats'][-1]['base_stat'],))
 
+        now_pok+=6
+        print("ID следующего покемона:", now_pok)
+        for i in range(len(Pokemons_new)):
+            Pokemons.append(Pokemons_new[i])
+
+        cache_key = f"my_model_page_{page_number}"
+        cache.set(cache_key, Pokemons_new)
+        #page_obj.object_list = Pokemons_new
+
+    # Выводим объекты на страницу
+    print(len(Pokemons))
+    # Создаем пагинатор с 10 объектами на странице
     paginator = Paginator(Pokemons, 6)
-    page_number = request.GET.get('page')
+
+    # Получаем объекты для текущей страницы
     page_obj = paginator.get_page(page_number)
 
     return render(request, "index.html", {'page_obj': page_obj})
@@ -235,7 +274,87 @@ def poke_fast_fight(request, name):
 
         mailform = MailForm()
         return render(request, 'fast_end.html', {"End": ["Письмо отправлено!"], "Form": mailform, "Flag": 0 } )
+    return 0
 
+def convert_to_markdown(checkbox1, checkbox2, checkbox3, poke):
+
+    result = f"# Имя покемона: {poke.name}\n\n"
+    if checkbox1:
+        result += f"Аттака: {poke.attack}\n\n"
+
+    if checkbox2:
+        result += f"Здоровье: {poke.hp}\n\n"
+
+    if checkbox3:
+        result += f"Скорость: {poke.speed}\n\n"
+    return result
+
+def poke_save_info(request, name):
+    if request.method == 'GET':
+        choosed_poke =0
+
+        for i in range(len(Pokemons)):
+            if (Pokemons[i].name == name):
+                choosed_poke = Pokemons[i]
+                break
+        return render(request, 'ftp_sending.html', {"P": choosed_poke} )
+
+    else:
+        checkbox1 = request.POST.get('checkbox1')
+        checkbox2 = request.POST.get('checkbox2')
+        checkbox3 = request.POST.get('checkbox3')
+
+        choosed_poke =0
+
+        for i in range(len(Pokemons)):
+            if (Pokemons[i].name == name):
+                choosed_poke = Pokemons[i]
+                break
+
+        current_date = datetime.datetime.now().strftime('%Y%m%d')
+        markdown_text = convert_to_markdown(checkbox1, checkbox2, checkbox3, choosed_poke)
+        print(markdown_text)
+
+        FTP_HOST = "127.0.0.1"
+        FTP_USER = "Svetik"
+        FTP_PASS = "12345"
+
+        # connect to the FTP server
+        ftp = ftplib.FTP(FTP_HOST, FTP_USER, FTP_PASS)
+        # force UTF-8 encoding
+        ftp.encoding = "utf-8"
+
+        file_list_fol = ftp.nlst()
+        if current_date in file_list_fol:
+
+            file_list = ftp.nlst(current_date)
+            filename = str(name)+"_pokemon.md"
+            if filename in file_list:
+                print(f'Файл уже существует')
+            else:
+                ftp.cwd(current_date)
+                with open(filename, "wb") as file:
+
+                    file.write(markdown_text.encode())
+                ftp.storbinary(f"STOR {filename}", open(filename, 'rb'))
+
+        else:
+
+            ftp.mkd(current_date)
+            ftp.cwd(current_date)
+            filename = str(name)+"_pokemon.md"
+
+            with open(filename, "wb") as file:
+
+                file.write(markdown_text.encode())
+
+
+            ftp.storbinary(f"STOR {filename}", open(filename, 'rb'))
+
+
+        ftp.quit()
+
+        return render(request, "poke.html", context = {"Pokemon": choosed_poke })
 
 
     return 0
