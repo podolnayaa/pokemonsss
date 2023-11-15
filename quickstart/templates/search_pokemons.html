@@ -18,43 +18,36 @@
 
     >
         <div class="container" style="background-color: white; border-radius: 200px; width: content-box" >
-        <h1 class="mb-3">Pokemons Fights</h1>
-            </div>
-
-        <form method="POST" action="{% url 'search_pokemon' %}">
-            {% csrf_token %}
-            <input type="text" name="name" placeholder="Введите имя">
-            <button type="submit">Поиск</button>
-        </form>
-
+            <h1 class="mb-3">Pokemons Fights</h1>
+        </div>
     </div>
     <!-- Jumbotron -->
 </header>
-        <div class="container">
+<div class="container">
 
-            <div class="row">
-                {% for p in page_obj %}
-                <!-- Карточка с card-img-top -->
-                <div class="col-md-4">
-                <div class="card">
-                    <!-- Изображение -->
-                    <img class="card-img-top" style="width: 200px" src={{ p.image }} alt={{ p.name }}>
-                    <!-- Текстовый контент -->
-                    <div class="card-body">
-                        <h5 class="card-title"> {{ p.name }}</h5>
-                        <a href="{% url 'show_pokemon' p.name %}" class="btn btn-primary"> Подробно </a>
-                    </div>
-                </div><!-- Конец карточки -->
+    <div class="row">
+        {% for p in page_obj %}
+        <!-- Карточка с card-img-top -->
+        <div class="col-md-4">
+            <div class="card">
+                <!-- Изображение -->
+                <img class="card-img-top" style="width: 200px" src={{ p.image }} alt={{ p.name }}>
+                <!-- Текстовый контент -->
+                <div class="card-body">
+                    <h5 class="card-title"> {{ p.name }}</h5>
+                    <a href="{% url 'show_pokemon' p.name %}" class="btn btn-primary"> Подробно </a>
                 </div>
-                {% endfor %}
-
-            </div>
+            </div><!-- Конец карточки -->
         </div>
+        {% endfor %}
+
+    </div>
+</div>
 
 <div class="container">
 
     <div class="row">
-<div class="pagination">
+        <div class="pagination">
     <span class="step-links">
         {% if page_obj.has_previous %}
             <a href="?page={{ page_obj.previous_page_number }}">предыдущая</a>
@@ -68,7 +61,7 @@
             <a href="?page={{ page_obj.next_page_number }}">следующая</a>
         {% endif %}
     </span>
-</div>
+        </div>
     </div>
 </div>
 

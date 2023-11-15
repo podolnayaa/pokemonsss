@@ -53,7 +53,7 @@ def index(request):
         cache_key = f"my_model_page_None"
         cache.set(cache_key, Pokemons )
 
-    print(start)
+    # print(start)
     # Создаем пагинатор с 10 объектами на странице
     paginator = Paginator(Pokemons, 6)
 
@@ -65,7 +65,7 @@ def index(request):
     # Получаем объекты для текущей страницы
     page_obj = paginator.get_page(page_number)
 
-    print("PAGE NUMBER:", page_number)
+    # print("PAGE NUMBER:", page_number)
     # Проверяем, есть ли кеш для текущей страницы
     cache_key = f"my_model_page_{page_obj.number}"
     cached_data = cache.get(cache_key)
@@ -76,7 +76,7 @@ def index(request):
         #page_obj.object_list = cached_data
     else:
         # Если кеша нет, то получаем данные и сохраняем их в кеш
-        print("YES")
+        # print("YES")
         Pokemons_new = []
         for i in range(now_pok,now_pok+6):
             response = requests.get(f"{BASE_URL}/{i}").json()
@@ -87,7 +87,7 @@ def index(request):
                                 response['stats'][-1]['base_stat'],))
 
         now_pok+=6
-        print("ID следующего покемона:", now_pok)
+        # print("ID следующего покемона:", now_pok)
         for i in range(len(Pokemons_new)):
             Pokemons.append(Pokemons_new[i])
 
@@ -96,7 +96,7 @@ def index(request):
         #page_obj.object_list = Pokemons_new
 
     # Выводим объекты на страницу
-    print(len(Pokemons))
+    # print(len(Pokemons))
     # Создаем пагинатор с 10 объектами на странице
     paginator = Paginator(Pokemons, 6)
 
@@ -110,7 +110,6 @@ def index(request):
 def show_pokemon(request, name):
     for i in range(len(Pokemons)):
         if (Pokemons[i].name == name):
-            print(name)
             return render(request, "poke.html", context = {"Pokemon": Pokemons[i]})
 
 
@@ -126,7 +125,7 @@ def poke_fights(request, name):
 
         if (my_point > 0 and enemy_point > 0 ):
             hit = (int)(request.POST.get("hit"))
-            random_index = random.randint(0, 10)
+            random_index = 3
 
             choosed_poke = []
 
@@ -358,3 +357,19 @@ def poke_save_info(request, name):
 
 
     return 0
+
+def search_pokemon(request):
+    if request.method == 'POST':
+        letter = str(request.POST.get('name'))
+        choosed_poke = []
+        for i in range(len(Pokemons)):
+            if ((Pokemons[i].name).startswith(letter)):
+                choosed_poke.append(Pokemons[i])
+
+        paginator = Paginator(choosed_poke, 3)
+
+        # Получаем номер запрошенной страницы из GET-параметров
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+
+        return render(request, "search_pokemons.html", {'page_obj': page_obj})

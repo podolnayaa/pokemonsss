@@ -29,5 +29,6 @@ poke_patterns = [
 
 urlpatterns = [
     path("", views.index, name='home'),
+    path("search_pokemon/", views.search_pokemon, name='search_pokemon'),
     path("pokemon/<str:name>/", include(poke_patterns)),
 ]
