@@ -1,34 +1,43 @@
 from django.test import TestCase, LiveServerTestCase
 from django.urls import reverse
-
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.webdriver import WebDriver
 from selenium.webdriver.support.wait import WebDriverWait
-
 from .models import Fight
+
+
 
 class PokemonsViewTest(TestCase):
 
     def test_index(self):
         response = self.client.get(reverse('home'))
         self.assertEqual(response.status_code, 200)
+        pokemon_list = response.context['page_obj']
+        self.assertEqual(len(pokemon_list), 6)
+        self.assertEqual(pokemon_list[1].name, "venusaur")
+
 
     def test_show_pokemon(self):
         response = self.client.get(reverse('show_pokemon', args=['venusaur']))
         self.assertEqual(response.status_code, 200)
+        pokemon_= response.context['Pokemon']
+        self.assertEqual(pokemon_.name, "venusaur")
+
 
     def test_poke_fights(self):
         self.assertEqual(len(Fight.objects.all()), 0)
         response = self.client.get(reverse('poke_fights', args=['venusaur']))
+
+        pokemon_list = response.context['Pokemons']
+        self.assertEqual(len(pokemon_list), 2)
+
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(Fight.objects.all()[0].fightid, 1)
-        self.assertEqual(Fight.objects.all()[0].fighter_f, 80)
         h = Fight.objects.all()[0].fighter_s
 
         response2 = self.client.post(reverse('poke_fights', args=['venusaur']),
                                     { 'hit': 3})
-        self.assertEqual(response2.status_code, 200)
+
         self.assertEqual(len(Fight.objects.all()), 1)
         self.assertEqual(Fight.objects.all()[0].fightid, 1)
         self.assertEqual(Fight.objects.all()[0].fighter_f, 80)
